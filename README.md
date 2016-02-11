@@ -8,3 +8,7 @@ Open main.py, and change the recipient, sender, subject(optional), state, city, 
 # Obtaining an API key
 
 Go to " http://openweathermap.org/api " and sign up for the API key.
+
+# Other
+
+I would recommend putting this script in a chron job. That's what I'm doing currently.
