@@ -59,12 +59,17 @@ def main():
         else if temp >= 80:
             special = "HOLY BUTTS IT'S HOT! DON'T EVEN THINK ABOUT OUTSIDE!"
 
-    x = [int(temp), wind, humid, special]
+    if celcius == True:
+        unit = "C"
+    else:
+        unit = "F"
+
+    x = [int(temp), unit, wind, humid, special]
 
     body = """
     Good Morning!
 
-    The current temperate is %s F!
+    The current temperate is %s %s!
     The wind speed is %s mp/h, the current humidity is %s! %s
 
     Have an amazing day. You rock. :)
