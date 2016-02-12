@@ -20,13 +20,17 @@ apiKey = ""
 celcius = False;
 
 def main():
+    # Using requests, we can get the json output from this url. Then we're formatting it to replace the placeholders with the actual values.
     r = requests.get('http://api.openweathermap.org/data/2.5/weather?q={0},{1}&appid={2}'.format(city, state, apiKey))
 
+    # Getting the json
     data = r.json()
 
     if celcius == True:
+        # Conversion for Kelvin to Celcius
         temp = (data.get('main').get('temp') - 273.15)
     else:
+        # Conversion for Kelvin to Fahrenheit
         temp = 1.8 * (data.get('main').get('temp') - 273) + 32
 
     humid = data.get('main').get('humidity')
@@ -37,7 +41,7 @@ def main():
     # The celcius ones are just rough of what they should be around.
 
     if celcius == True:
-        if temp < -1:
+        if temp <= -1:
             special = "Brr! It's cold out!"
         elif temp > -1 and temp < 10:
             special = "It's kind of warm today! Maybe go outside? Nah. You have too much to do :)"
@@ -48,7 +52,7 @@ def main():
         else if temp >= 26:
             special = "HOLY BUTTS IT'S HOT! DON'T EVEN THINK ABOUT OUTSIDE!"
     else:
-        if temp < 30:
+        if temp <= 30:
             special = "Brr! It's cold out!"
         elif temp > 30 and temp < 50:
             special = "It's kind of warm today! Maybe go outside? Nah. Lol you have too much to do :)"
@@ -64,6 +68,7 @@ def main():
     else:
         unit = "F"
 
+    # Creating the variable 'x' containing all the formatting for the body message
     x = [int(temp), unit, wind, humid, special]
 
     body = """
@@ -75,10 +80,12 @@ def main():
     Have an amazing day. You rock. :)
     """
 
+    # Formatting body with the 'x' variable
     msg = MIMEText(body % tuple(x))
     msg['Subject'] = subject
     msg['From'] = sender
     msg['To'] = ", ".join(recipient)
+
     session = smtplib.SMTP(smtpServer)
     session.starttls()
     session.login(sender, password)
