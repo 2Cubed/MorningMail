@@ -1,95 +1,79 @@
 
-import smtplib
+from smtplib import SMTP
 from email.mime.text import MIMEText
-import urllib3
-import json
-import requests
-import sys
-import socket
-from random import Random
+from json import load
+from requests import get
+from os.path import exists
+from shutil import copyfile
 
-recipient = ["recipient"]
-sender = "sender"
-subject = "Good Morning!"
-smtpServer = ""
 
-state = ""
-city = ""
-apiKey = ""
+class MorningMail:
 
-celcius = False;
+    def __init__(self):
+        print("Loading config")
+        self._load_config()
 
-def main():
-    # Using requests, we can get the json output from this url. Then we're formatting it to replace the placeholders with the actual values.
-    r = requests.get('http://api.openweathermap.org/data/2.5/weather?q={0},{1}&appid={2}'.format(city, state, apiKey))
+        print("Sending email")
+        self.send_mail()
 
-    # Getting the json
-    data = r.json()
+    def _load_config(self):
 
-    if celcius == True:
-        # Conversion for Kelvin to Celcius
-        temp = (data.get('main').get('temp') - 273.15)
-    else:
-        # Conversion for Kelvin to Fahrenheit
-        temp = 1.8 * (data.get('main').get('temp') - 273) + 32
+        if exists("config.json"):
+            with open('config.json') as conf:
+                conf = load(conf)
 
-    humid = data.get('main').get('humidity')
-    wind = data.get('wind').get('speed')
+                self.recipient = conf['to']
+                self.sender = conf['sender']
+                self.password = conf['password']
+                self.subject = conf['subject']
+                self.smtp_server = conf['server']
+                self.state = conf['state']
+                self.city = conf['city']
+                self.api_key = conf['api_key']
+                self.unit = conf['unit']
+                self.greeting = conf['greeting']
+                self.insperation = conf['insperation']
+        else:
+            copyfile("config-template.json", "config.json")
 
-    special = ""
+    def send_mail(self):
+        req = get(
+            'http://api.openweathermap.org/data/2.5/weather?q={city},{state}&appid={api_key}'
+            .format(city=self.city, state=self.state, api_key=self.api_key))
 
-    # The celcius ones are just rough of what they should be around.
+        data = req.json()
 
-    if celcius == True:
-        if temp <= -1:
-            special = "Brr! It's cold out!"
-        elif temp > -1 and temp < 10:
-            special = "It's kind of warm today! Maybe go outside? Nah. You have too much to do :)"
-        elif temp > 10 and temp < 15:
-            special = "It's quite warm today!"
-        elif temp > 15 and temp < 26:
-            special = "It's very warm!"
-        else if temp >= 26:
-            special = "HOLY BUTTS IT'S HOT! DON'T EVEN THINK ABOUT OUTSIDE!"
-    else:
-        if temp <= 30:
-            special = "Brr! It's cold out!"
-        elif temp > 30 and temp < 50:
-            special = "It's kind of warm today! Maybe go outside? Nah. Lol you have too much to do :)"
-        elif temp > 50 and temp < 60:
-            special = "It's quite warm today!"
-        elif temp > 60 and temp < 80:
-            special = "It's very warm!"
-        else if temp >= 80:
-            special = "HOLY BUTTS IT'S HOT! DON'T EVEN THINK ABOUT OUTSIDE!"
+        if self.unit.lower() == "f":
+            self.temp = 1.8 * (data['main']['temp'] - 273) + 32
+        elif self.unit.lower() == "c":
+            self.temp = (data['main']['temp'] - 273.15)
+        elif self.unit.lower() == "k":
+            self.temp = data['main']['temp']
+        else:
+            print(self.unit + " is not a valid unit.")
+            exit(1)
 
-    if celcius == True:
-        unit = "C"
-    else:
-        unit = "F"
+        self.humid = data['main']['humidity']
+        self.wind = data['wind']['speed']
 
-    # Creating the variable 'x' containing all the formatting for the body message
-    x = [int(temp), unit, wind, humid, special]
+        body = """
+        {greeting}
 
-    body = """
-    Good Morning!
+        The current temperate isf {temp} {unit}!
+        The wind speed is {wind} mp/h, the current humidity is {humid}!
 
-    The current temperate is %s %s!
-    The wind speed is %s mp/h, the current humidity is %s! %s
+        {insperation}
+        """.format(greeting=self.greeting, temp=int(self.temp), unit=self.unit, wind=self.wind, humid=self.humid, insperation="stuff")
 
-    Have an amazing day. You rock. :)
-    """
+        msg = MIMEText(body)
+        msg['Subject'] = self.subject
+        msg['From'] = self.sender
+        msg['To'] = ", ".join(self.recipient)
 
-    # Formatting body with the 'x' variable
-    msg = MIMEText(body % tuple(x))
-    msg['Subject'] = subject
-    msg['From'] = sender
-    msg['To'] = ", ".join(recipient)
+        session = SMTP(self.smtp_server)
+        session.starttls()
+        session.login(self.sender, self.password)
+        session.sendmail(self.sender, self.recipient, msg.as_string())
+        session.quit()
 
-    session = smtplib.SMTP(smtpServer)
-    session.starttls()
-    session.login(sender, password)
-    session.sendmail(sender, recipient, msg.as_string())
-    session.quit()
-
-main()
+mail = MorningMail()
