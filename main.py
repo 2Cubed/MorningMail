@@ -35,6 +35,7 @@ class MorningMail:
                 self.insperation = conf['insperation']
         else:
             copyfile("config-template.json", "config.json")
+            exit(1)
 
     def send_mail(self):
         req = get(
