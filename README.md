@@ -3,15 +3,15 @@ Little mail script to email you with the weather of your area. In Python!
 
 # Usage
 
-Open main.py, and change the recipient, sender, subject(optional), state, city, and API key. You can also set "celcius" to true if you require that.
+Run the script. It should close the first time it's ran. Then, open the `config.json` file, and fill in all of the sections. Then, run the script again, and you should see an email in the recipient's inbox if it was done correctly!
 
 # Obtaining an API key
 
-Go to " http://openweathermap.org/api " and sign up for the API key.
+Go to " http://openweathermap.org/api " and sign up to get the API key.
 
 # Example
 
-http://i.imgur.com/iEJqqUA.png
+![Example](http://i.imgur.com/iEJqqUA.png)
 
 # Other
 
