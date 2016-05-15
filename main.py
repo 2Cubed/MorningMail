@@ -10,73 +10,89 @@ from shutil import copyfile
 class MorningMail:
 
     def __init__(self):
-        print("Loading config")
-        self._load_config()
+        self.weather_data = {}
 
-        print("Sending email")
-        self.send_mail()
+        print("Loading config file...")
+        self._load_config()
 
     def _load_config(self):
 
         if exists("config.json"):
-            with open('config.json') as conf:
-                conf = load(conf)
-
-                self.recipient = conf['to']
-                self.sender = conf['sender']
-                self.password = conf['password']
-                self.subject = conf['subject']
-                self.smtp_server = conf['server']
-                self.state = conf['state']
-                self.city = conf['city']
-                self.api_key = conf['api_key']
-                self.unit = conf['unit']
-                self.greeting = conf['greeting']
-                self.insperation = conf['insperation']
+            with open("config.json") as config:
+                self.config = load(config)
         else:
+            print(r"Please add your config to config.json and restart.")
             copyfile("config-template.json", "config.json")
             exit(1)
 
     def send_mail(self):
-        req = get(
-            'http://api.openweathermap.org/data/2.5/weather?q={city},{state}&appid={api_key}'
-            .format(city=self.city, state=self.state, api_key=self.api_key))
+        print("Sending mail...")
+        weather_data = get(
+            r"http://api.openweathermap.org/data/2.5/weather",
+            params=dict(
+                q=','.join(self.config["location"]),
+                appid=self.config["openweathermap"]["api_key"]
+            )
+        ).json()
 
-        data = req.json()
+        conversions = {
+            "temperature": {
+                "key": "temperature",
+                "default": "Farenheit",
+                "convert": {
+                    "f": 1.8 * weather_data["main"]["temp"] - 459.67,
+                    "c": weather_data["main"]["temp"] - 273.15,
+                    "k": weather_data["main"]["temp"]
+                }
+            },
+            "distance": {
+                "key": "wind_speed",
+                "default": "miles",
+                "convert": {
+                    "m": weather_data["wind"]["speed"],
+                    "k": weather_data["wind"]["speed"] / 0.62137
+                }
+            }
+        }
 
-        if self.unit.lower() == "f":
-            self.temp = 1.8 * (data['main']['temp'] - 273) + 32
-        elif self.unit.lower() == "c":
-            self.temp = (data['main']['temp'] - 273.15)
-        elif self.unit.lower() == "k":
-            self.temp = data['main']['temp']
-        else:
-            print(self.unit + " is not a valid unit.")
-            exit(1)
+        for unit, data in conversions.items():
+            if self.config["units"][unit][0].lower() not in data["convert"]:
+                print("{} is not a valid unit. Defaulting to {}.".format(
+                    self.config["units"][unit]), data["default"])
+                self.config["units"][unit] = data["default"]
+            self.weather_data[data["key"]] = data["convert"][
+                self.config["units"][unit][0].lower()]
 
-        self.humid = data['main']['humidity']
-        self.wind = data['wind']['speed']
+        self.weather_data["humidity"] = weather_data["main"]["humidity"]
 
         body = """
-        {greeting}
+        {text[greeting]}
 
-        The current temperate is {temp} {unit}!
-        The wind speed is {wind} mp/h, the current humidity is {humid}!
+        The temperature is {weather[temperature]:.2f} °{units[temperature]}!
+        The wind speed is {weather[wind_speed]:.2f} {units[distance]}/h!
+        The humidity is {weather[humidity]:.0f}%!
 
-        {insperation}
-        """.format(greeting=self.greeting, temp=int(self.temp), unit=self.unit,
-                   wind=self.wind, humid=self.humid,
-                   insperation=self.insperation)
+        {text[inspiration]}
+        """.format(
+            text=self.config["text"],
+            weather=self.weather_data,
+            units=self.config["units"]
+        )
 
-        msg = MIMEText(body)
-        msg['Subject'] = self.subject
-        msg['From'] = self.sender
-        msg['To'] = ", ".join(self.recipient)
+        message = MIMEText(body)
+        message['Subject'] = self.config["text"]["subject"]
+        message['From'] = self.config["email"]["auth"]["user"]
+        message['To'] = ', '.join(self.config["recipients"])
 
-        session = SMTP(self.smtp_server)
+        session = SMTP(**self.config["email"]["config"])
         session.starttls()
-        session.login(self.sender, self.password)
-        session.sendmail(self.sender, self.recipient, msg.as_string())
+        session.login(**self.config["email"]["auth"])
+        session.sendmail(
+            self.config["email"]["auth"]["user"],
+            self.config["recipients"],
+            message.as_string()
+        )
         session.quit()
+        print("Mail sent!")
 
-mail = MorningMail()
+MorningMail().send_mail()

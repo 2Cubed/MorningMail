@@ -1,13 +1,31 @@
 {
-  "to": [""],
-  "sender": "",
-  "password": "",
-  "subject": "",
-  "server": "",
-  "state": "",
-  "city": "",
-  "api_key": "",
-  "unit": "",
-  "greeting": "",
-  "insperation": ""
+  "recipients": [
+    "YOU@gmail.com"
+  ],
+  "email":{
+    "config": {
+      "host": "smtp.gmail.com",
+      "port": 587
+    },
+    "auth": {
+      "user": "SENDER@gmail.com",
+      "password": "PASSWORD"
+    }
+  },
+  "openweathermap": {
+    "api_key": "0p3nw347h3rm4p"
+  },
+  "units": {
+    "temperature": "Farenheit",
+    "distance": "Mile"
+  },
+  "location": {
+    "state": "STATE",
+    "city": "CITY",
+  },
+  "text": {
+    "subject": "Morning Mail!",
+    "greeting": "Good morning!",
+    "inspiration": "Have a great day. :)"
+  }
 }
