@@ -63,7 +63,9 @@ class MorningMail:
         The wind speed is {wind} mp/h, the current humidity is {humid}!
 
         {insperation}
-        """.format(greeting=self.greeting, temp=int(self.temp), unit=self.unit, wind=self.wind, humid=self.humid, insperation="stuff")
+        """.format(greeting=self.greeting, temp=int(self.temp), unit=self.unit,
+                   wind=self.wind, humid=self.humid,
+                   insperation=self.insperation)
 
         msg = MIMEText(body)
         msg['Subject'] = self.subject
