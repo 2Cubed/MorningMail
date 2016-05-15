@@ -59,7 +59,7 @@ class MorningMail:
         body = """
         {greeting}
 
-        The current temperate isf {temp} {unit}!
+        The current temperate is {temp} {unit}!
         The wind speed is {wind} mp/h, the current humidity is {humid}!
 
         {insperation}
